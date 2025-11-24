@@ -5,6 +5,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install useful tools and packages
 RUN apt update && apt install -y \
+    openssh-client \
     git \
     curl \
     build-essential \

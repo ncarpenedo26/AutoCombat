@@ -7,7 +7,9 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "terminal.integrated.shell.linux": "/bin/bash"
+        "terminal.integrated.shell.linux": "/bin/bash",
+        "remote.SSH.forwardAgent": true
+
       },
       "extensions": [
         "ms-iot.vscode-ros",

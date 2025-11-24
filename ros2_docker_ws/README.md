@@ -33,6 +33,16 @@ looking to be the best option
 ![alt text](docs/image-1.png)
 
 
+Once in wsl make sure to start ssh agent so you can git commit from within the container
+# Start the agent (if not already running)
+eval "$(ssh-agent -s)"
+
+# Add your key
+ssh-add ~/.ssh/id_rsa
+
+[!NOTE] Must have opened vscode in the folder of ros2_docker_ws to open our container!
+
+
 (WSL!)
 https://docs.ros.org/en/humble/Tutorials/Advanced/Simulators/Webots/Installation-Windows.html
 
