@@ -88,6 +88,12 @@ Nav2 (highlevel control system, behavior trees, nav, state estimation):
 https://docs.nav2.org/concepts/index.html#controllers
 
 
+you will need socat installed in WSL2
+
+sudo apt install socat
+
+
+
 cat << 'EOF' >> ~/.bash_profile
 
 # ===========================
