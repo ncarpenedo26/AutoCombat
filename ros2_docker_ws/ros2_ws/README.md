@@ -11,8 +11,33 @@ my_ws/
 
 
 
-Setup
- https://docs.ros.org/en/humble/How-To-Guides/Setup-ROS-2-with-VSCode-and-Docker-Container.html
+Setup:
+https://apps.microsoft.com/detail/9pn20msr04dw?hl=en-US&gl=US
+
+
+https://github.com/Https404PaigeNotFound/ros-humble-docker-demo/blob/main/docs/setup-from-scratch.md
+looking to be the best option
+
+
+![alt text](docs/image.png)
+
+![alt text](docs/image-1.png)
+
+
+(WSL!)
+https://docs.ros.org/en/humble/Tutorials/Advanced/Simulators/Webots/Installation-Windows.html
+
+ROS 2 Humble Hawksbill is made for Ubuntu 22.04 (Jammy Jellyfish).
+
+(Chat GPT setup)
+pip install vcstool
+
+
+(Windows setup to install docker)
+https://docs.docker.com/desktop/setup/install/windows-install/
+
+https://docs.ros.org/en/humble/How-To-Guides/Setup-ROS-2-with-VSCode-and-Docker-Container.html#install-remote-development-extension
+(From here)
 
 How to setup Gazebo simulation:
 
