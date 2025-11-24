@@ -2,7 +2,10 @@
   "name": "ROS 2 Humble Dev Container",
   "build": {
     "dockerfile": "Dockerfile",
-    "context": ".."
+    "context": "..",
+    "args": {
+      "USERNAME": "devuser"
+    }
   },
   "customizations": {
     "vscode": {
@@ -16,14 +19,35 @@
         "ms-vscode.cpptools",
         "ms-python.python",
         "ms-azuretools.vscode-docker",
-        "ms-vscode.remote-containers"
+        "ms-vscode.remote-containers",
+        "eamodio.gitlens",
+        "twxs.cmake",
+        "donjayamanne.python-extension-pack"
       ]
     }
   },
+  "containerEnv": {
+    "DISPLAY": "unix:0",
+    "ROS_LOCALHOST_ONLY": "1",
+    "ROS_DOMAIN_ID": "42",
+    // "SSH_AUTH_SOCK": "/ssh-agent"
+  },
+  "runArgs": [
+    "--net=host",
+    "--pid=host",
+    "--ipc=host",
+    "-e", "DISPLAY=${env:DISPLAY}"
+  ],
   "mounts": [
+    "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
+    "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached",
+    // "source=${env:SSH_AUTH_SOCK},target=/ssh-agent,type=bind",
     "source=${localWorkspaceFolder}/..,target=/workspace,type=bind"
   ],
-  "postCreateCommand": "/bin/bash -c 'source /opt/ros/humble/setup.bash'",
-  "remoteUser": "root",
-  "workspaceFolder": "/workspace/ros2_docker_ws/ros2_ws"
+
+  "postCreateCommand": "/bin/bash -c 'source /opt/ros/humble/setup.bash && sudo rosdep update && sudo rosdep install --from-paths src --ignore-src -y && sudo chown -R $(whoami) /workspace/ros2_docker_ws/ros2_ws/'",
+  "remoteUser": "devuser",
+  "workspaceFolder": "/workspace/ros2_docker_ws/ros2_ws",
+  "privileged": true
+
 }

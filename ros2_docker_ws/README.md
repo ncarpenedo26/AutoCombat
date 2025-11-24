@@ -42,6 +42,10 @@ ssh-add ~/.ssh/id_rsa
 
 [!NOTE] Must have opened vscode in the folder of ros2_docker_ws to open our container!
 
+[!NOTE] Make sure ssh-agent is running everytime before you open up any container!
+
+lj@DESKTOP-UO7A26Q:~/AutoCombat/ros2_docker_ws$ echo $SSH_AUTH_SOCK lj@DESKTOP-UO7A26Q:~/AutoCombat/ros2_docker_ws$ eval "$(ssh-agent -s)" ssh-add ~/.ssh/id_rsa Agent pid 31937 Identity added: /home/lj/.ssh/id_rsa (louiejoshualabata@berkeley.edu) lj@DESKTOP-UO7A26Q:~/AutoCombat/ros2_docker_ws$ ssh-add -l 4096 SHA256:rnfRyJeLdFOzM9fU6pFIun94nfzZN3+RcMdkG36AanU louiejoshualabata@berkeley.edu (RSA) lj@DESKTOP-UO7A26Q:~/AutoCombat/ros2_docker_ws$ echo $SSH_AUTH_SOCK /tmp/ssh-XXXXXXdEtLNd/agent.31936 lj@DESKTOP-UO7A26Q:~/AutoCombat/ros2_docker_ws$
+
 
 (WSL!)
 https://docs.ros.org/en/humble/Tutorials/Advanced/Simulators/Webots/Installation-Windows.html
@@ -82,3 +86,52 @@ https://control.ros.org/rolling/doc/resources/roscon2025_workshop.html
 
 Nav2 (highlevel control system, behavior trees, nav, state estimation):
 https://docs.nav2.org/concepts/index.html#controllers
+
+
+cat << 'EOF' >> ~/.bash_profile
+
+# ===========================
+# WSL2 SSH Agent Auto-Start
+# With debug prints
+# ===========================
+#!/bin/bash
+echo "=== SSH Agent Setup Script Starting ==="
+
+if [ -z "$SSH_AUTH_SOCK" ]; then
+    echo "[1] SSH_AUTH_SOCK is empty. Checking for running ssh-agent..."
+   
+    RUNNING_AGENT="$(ps -ax | grep 'ssh-agent -s' | grep -v grep | wc -l | tr -d '[:space:]')"
+    echo "[2] Number of running ssh-agent processes: $RUNNING_AGENT"
+   
+    if [ "$RUNNING_AGENT" = "0" ]; then
+        echo "[3] No running ssh-agent found. Launching a new agent..."
+        ssh-agent -s &> "$HOME/.ssh/ssh-agent"
+        echo "[4] New ssh-agent started. Info saved in $HOME/.ssh/ssh-agent"
+    else
+        echo "[5] ssh-agent already running. Will use existing one."
+    fi
+
+    echo "[6] Evaluating ssh-agent environment..."
+    eval "$(cat "$HOME/.ssh/ssh-agent")"
+    echo "[7] SSH_AUTH_SOCK is now: $SSH_AUTH_SOCK"
+else
+    echo "[8] SSH_AUTH_SOCK is already set: $SSH_AUTH_SOCK"
+fi
+
+echo "[9] Running ssh-add..."
+ssh-add 
+
+if [ -n "$BASH_VERSION" ]; then
+    if [ -f "$HOME/.bashrc" ]; then
+        echo "[10] Sourcing .bashrc..."
+        . "$HOME/.bashrc"
+    fi
+fi
+
+echo "=== SSH Agent Setup Script Finished ==="
+
+# ===========================
+# End SSH Agent Auto-Start
+# ===========================
+
+EOF
