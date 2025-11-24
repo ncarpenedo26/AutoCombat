@@ -9,6 +9,15 @@ my_ws/
  ├── install/ <-- created automatically by colcon
  └── log/     <-- also created automatically
 
+AutoCombat /
+    ros2_docker_ws /
+        .devcontainer /
+            Dockerfile
+            devcontainer.json
+        ros2_ws
+            src/
+            (...)
+            
 
 
 Setup:

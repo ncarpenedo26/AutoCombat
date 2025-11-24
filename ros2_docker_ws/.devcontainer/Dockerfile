@@ -20,9 +20,8 @@ RUN apt update && apt install -y \
 # Set default shell
 SHELL ["/bin/bash", "-c"]
 
-# Create workspace and set working directory
-RUN mkdir -p /ros2_ws/src
-WORKDIR /ros2_ws
+# Working directory can be left as /workspace or unset; VS Code opens workspaceFolder
+WORKDIR /workspace/ros2_docker_ws/ros2_ws
 
 # Automatically source ROS 2 environment
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
