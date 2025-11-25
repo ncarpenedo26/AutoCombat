@@ -16,6 +16,7 @@ RUN apt update && apt install -y \
     ros-humble-desktop \
     ros-dev-tools \
     ros-humble-gazebo-ros-pkgs \
+    ros-humble-xacro \
     gazebo \
     python3-colcon-common-extensions \
     git \
@@ -24,7 +25,6 @@ RUN apt update && apt install -y \
     openssh-client \
     sudo \
     vim && \
-
     apt clean
 
 # Locale setup
