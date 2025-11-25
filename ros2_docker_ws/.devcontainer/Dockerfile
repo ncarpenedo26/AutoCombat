@@ -7,19 +7,28 @@ ARG USERNAME=devuser
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-# Install useful tools and packages
+
+# Locale (ROS2 requirement)
+RUN apt update && apt install -y locales \
+    && locale-gen en_US en_US.UTF-8 \
+    && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+
+# Add ROS2 Humble sources
+RUN apt update && apt install -y curl gnupg lsb-release
+RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | apt-key add -
+RUN echo "deb http://packages.ros.org/ros2/ubuntu $(lsb_release -sc) main" \
+      > /etc/apt/sources.list.d/ros2.list
+
+# Install ROS2 Desktop Full + common dev tools
 RUN apt update && apt install -y \
-    openssh-client \
-    git \
-    curl \
-    build-essential \
+    ros-humble-desktop-full \
     ros-dev-tools \
     python3-colcon-common-extensions \
+    openssh-client \
+    git \
+    build-essential \
     python3-pip \
-    gazebo \
-    ros-humble-gazebo-ros-pkgs \
-    ros-humble-rviz2 \
-    ros-humble-rqt-graph \
     sudo \
     && apt clean
 
