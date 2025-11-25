@@ -45,9 +45,14 @@
     "source=${localWorkspaceFolder}/..,target=/workspace,type=bind"
   ],
 
-  "postCreateCommand": "/bin/bash -c 'source /opt/ros/humble/setup.bash && sudo rosdep update && sudo rosdep install --from-paths src --ignore-src -y && sudo chown -R $(whoami) /workspace/ros2_docker_ws/ros2_ws/' && sudo chown -R $(whoami):$(whoami) .git",
+  "postCreateCommand": "/bin/bash -c 'source /opt/ros/humble/setup.bash && sudo rosdep update && sudo rosdep install --from-paths src --ignore-src -y && sudo chown -R $(whoami) /workspace/ros2_docker_ws/ros2_ws/' && if ! git config --global user.email > /dev/null; then echo 'Please run: git config --global user.email \"you@example.com\"'; fi",
   "remoteUser": "devuser",
   "workspaceFolder": "/workspace/ros2_docker_ws/ros2_ws",
-  "privileged": true
+  "privileged": true,
+  
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  }
+  
 
 }
