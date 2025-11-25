@@ -135,3 +135,10 @@ echo "=== SSH Agent Setup Script Finished ==="
 # ===========================
 
 EOF
+
+
+
+# WTF another git thing
+cd /home/lj/AutoCombat
+sudo chown -R $USER:$USER .
+chmod -R u+rwX .
