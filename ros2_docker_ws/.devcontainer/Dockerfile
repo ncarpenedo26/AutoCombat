@@ -1,4 +1,4 @@
-# Use the official ROS 2 Humble image
+# Use the official ROS 2 Humble base
 FROM ros:humble
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -7,50 +7,41 @@ ARG USERNAME=devuser
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-
-# Locale (ROS2 requirement)
-RUN apt update && apt install -y locales \
-    && locale-gen en_US en_US.UTF-8 \
-    && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
-ENV LANG=en_US.UTF-8
-
-# Add ROS2 Humble sources
-RUN apt update && apt install -y curl gnupg lsb-release
-RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | apt-key add -
-RUN echo "deb http://packages.ros.org/ros2/ubuntu $(lsb_release -sc) main" \
-      > /etc/apt/sources.list.d/ros2.list
-
-# Install ROS2 Packages Setup
-RUN apt update && apt upgrade
-
-# Install ROS2 Desktop Full + common dev tools
+# Install required packages
 RUN apt update && apt install -y \
-    ros-humble-desktop-full \
+    locales \
+    curl \
+    gnupg \
+    lsb-release \
+    ros-humble-desktop \
     ros-dev-tools \
     python3-colcon-common-extensions \
-    openssh-client \
     git \
     build-essential \
     python3-pip \
+    openssh-client \
     sudo \
-    && apt clean
+    vim && \
+    apt clean
 
-RUN rosdep update && sudo rosdep install --from-paths src --ignore-src -y
-    
-# Create non-root user with passwordless sudo
+# Locale setup
+RUN locale-gen en_US.UTF-8
+ENV LANG=en_US.UTF-8
+
+# Create non-root user
 RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-    && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
+    && echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
-# Set default shell
+# Switch shell to bash
 SHELL ["/bin/bash", "-c"]
 
+# Ensure ALL users source ROS automatically
+RUN echo "source /opt/ros/humble/setup.bash" >> /etc/bash.bashrc
+
+# Set default user (important for VS Code)
+USER $USERNAME
 # Working directory can be left as /workspace or unset; VS Code opens workspaceFolder
 WORKDIR /workspace/ros2_docker_ws/ros2_ws
 
-# Automatically source ROS 2 environment
-RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
-RUN source /opt/ros/humble/setup.bash
-
-RUN sudo chown -R $USERNAME /workspace/ros2_docker_ws/ros2_ws/

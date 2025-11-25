@@ -7,37 +7,48 @@
       "USERNAME": "devuser"
     }
   },
+
+  // -------------------------------------------------------
+  // VS CODE SETTINGS AND EXTENSIONS
+  // -------------------------------------------------------
   "customizations": {
     "vscode": {
       "settings": {
-        "terminal.integrated.shell.linux": "/bin/bash",
+        "terminal.integrated.defaultProfile.linux": "bash",
         "remote.SSH.forwardAgent": true
-
       },
       "extensions": [
         "ms-iot.vscode-ros",
         "ms-vscode.cpptools",
         "ms-python.python",
         "ms-azuretools.vscode-docker",
-        "ms-vscode.remote-containers",
         "eamodio.gitlens",
         "twxs.cmake",
         "donjayamanne.python-extension-pack"
       ]
     }
   },
+
+  // -------------------------------------------------------
+  // ENVIRONMENT
+  // -------------------------------------------------------
   "containerEnv": {
     "DISPLAY": "unix:0",
     "ROS_LOCALHOST_ONLY": "1",
-    "ROS_DOMAIN_ID": "42",
-    // "SSH_AUTH_SOCK": "/ssh-agent"
+    "ROS_DOMAIN_ID": "42"
   },
+
+  // -------------------------------------------------------
+  // DOCKER RUNTIME ARGS
+  // -------------------------------------------------------
   "runArgs": [
     "--net=host",
-    "--pid=host",
-    "--ipc=host",
     "-e", "DISPLAY=${env:DISPLAY}"
   ],
+
+  // -------------------------------------------------------
+  // MOUNTS
+  // -------------------------------------------------------
   "mounts": [
     "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
     "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached",
@@ -45,16 +56,15 @@
     "source=${localWorkspaceFolder}/..,target=/workspace,type=bind"
   ],
 
-  "postCreateCommand": "/bin/bash -c 'source /opt/ros/humble/setup.bash'",
+  // -------------------------------------------------------
+  // AFTER CONTAINER CREATION
+  // -------------------------------------------------------
+  "postCreateCommand": "bash ../.devcontainer/post_create.sh",
 
-  // "postCreateCommand": "/bin/bash -c 'source /opt/ros/humble/setup.bash && sudo rosdep update && sudo rosdep install --from-paths src --ignore-src -y && sudo chown -R $(whoami) /workspace/ros2_docker_ws/ros2_ws/'",
   "remoteUser": "devuser",
   "workspaceFolder": "/workspace/ros2_docker_ws/ros2_ws",
   "privileged": true,
-  
-  "features": {
+    "features": {
     "ghcr.io/devcontainers/features/git:1": {}
   }
-  
-
 }
