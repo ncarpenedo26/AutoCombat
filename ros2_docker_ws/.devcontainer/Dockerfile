@@ -20,6 +20,9 @@ RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | apt
 RUN echo "deb http://packages.ros.org/ros2/ubuntu $(lsb_release -sc) main" \
       > /etc/apt/sources.list.d/ros2.list
 
+# Install ROS2 Packages Setup
+RUN apt update && apt upgrade
+
 # Install ROS2 Desktop Full + common dev tools
 RUN apt update && apt install -y \
     ros-humble-desktop-full \
@@ -32,6 +35,7 @@ RUN apt update && apt install -y \
     sudo \
     && apt clean
 
+RUN rosdep update && sudo rosdep install --from-paths src --ignore-src -y
     
 # Create non-root user with passwordless sudo
 RUN groupadd --gid $USER_GID $USERNAME \
@@ -47,3 +51,6 @@ WORKDIR /workspace/ros2_docker_ws/ros2_ws
 
 # Automatically source ROS 2 environment
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
+RUN source /opt/ros/humble/setup.bash
+
+RUN sudo chown -R $USERNAME /workspace/ros2_docker_ws/ros2_ws/
