@@ -10,6 +10,9 @@ public:
   // Configuration (Call in setup())
   void init();
 
+  // Get motor rotations before gearing
+  double getRotations();
+
   long getCount();
 
   void reset();

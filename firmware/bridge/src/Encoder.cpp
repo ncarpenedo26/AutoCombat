@@ -1,5 +1,8 @@
 #include "../inc/Encoder.h"
 
+#define PPR 7
+#define GEARING 30
+
 Encoder::Encoder(byte pinA, byte pinB) : _pinA(pinA), _pinB(pinB) {
   _count = 0;
   _oldState = 0;
@@ -25,6 +28,10 @@ void Encoder::reset() {
   noInterrupts();
   _count = 0;
   interrupts();
+}
+
+double Encoder::getRotations() {
+  return ((double) getCount()) / PPR;
 }
 
 // The interrupt handler logic

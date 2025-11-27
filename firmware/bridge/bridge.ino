@@ -1,17 +1,28 @@
 #include "inc/Encoder.h"
-#include "inc/Motor.h"
+#include "inc/Mecanum.h"
 
-// Define the pins for the specific hardware (D8 and D9 are on Port B)
 #define ENCODER_1_A_PIN 8 
 #define ENCODER_1_B_PIN 9 
+#define MOTOR_FL_PIN 2
+#define MOTOR_FR_PIN 3
+#define MOTOR_BL_PIN 4
+#define MOTOR_BR_PIN 5
+
 
 Encoder Encoder1(ENCODER_1_A_PIN, ENCODER_1_B_PIN);
+MecanumDrive drivetrain(
+  MOTOR_FL_PIN,
+  MOTOR_FR_PIN,
+  MOTOR_BL_PIN,
+  MOTOR_BR_PIN
+);
 
 void setup() {
   Serial.begin(115200);
   Serial.println("Modular Encoder Counter Initialized.");
 
   Encoder1.init(); // Configure pins using the class method
+  drivetrain.init();
   
   // Hardware-specific: Enable Pin Change Interrupts for Port B (D8-D13)
   // PCMSK0 is the register for PORTB
@@ -22,13 +33,16 @@ void setup() {
 
 void loop() {
   // Call the public getter method
-  long currentE1 = Encoder1.getCount();
+  double currentE1 = Encoder1.getRotations();
   
   // Print the counts to the Serial Monitor/RPi
-  Serial.print("E1: ");
+  Serial.print("Motor Rotations: ");
   Serial.println(currentE1);
+
+  // TODO: Real values
+  drivetrain.drive(0.1, 0.1, 0.1);
   
-  delay(100);
+  delay(1000);
 }
 
 

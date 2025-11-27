@@ -11,7 +11,7 @@ void Motor::init() {
 }
 
 void Motor::set(double velocity) {
-  // Map -1.0 -> MIN_PULSE, 1.0 -> MAX_PULSE
+  // Map -1.0 -> MIN_PULSE, 1.0 -> MAX_PULSE/Users/nick/Desktop/AutoCombat/firmware/bridge/inc/M
   int pulse = velocity * (MAX_PULSE - MIN_PULSE) + MIN_PULSE;
   int constrained = constrain(pulse, MIN_PULSE, MAX_PULSE);
   _esc.writeMicroseconds(constrained);
