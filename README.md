@@ -1,6 +1,11 @@
 # AutoCombat
 Autonomous combat robotics platform powered by ROS2
 
+## Connecting to RPI
+1. **Find network address.** When directly connected to ethernet, this will be 192.168.1.11. Over wifi, this will vary from network to network. Run `ip -a` on the rpi and look for the 'inet' address for the 'wlan0' interface. If you are connected directly over ethernet, you will also have to configure your local machine's DHCP server to assign the rpi an address properly. set IP Address to `192.168.1.10` and subnet mask to `255.255.255.0`
+3. a. **SSH** `ssh autocombat@<ip-address>`
+2. b. **RDP** connect to the pi using your preferred RDP client.
+
 ## Repository Structure
 
 * **`hardware/`**: Contains all **mechanical and hardware design files**.
@@ -17,7 +22,6 @@ Autonomous combat robotics platform powered by ROS2
 ### 1. **Branching Strategy (Git Flow)**
 
 * **`main` branch**: **Always production/stable-ready**. Only merge well-tested code in from the `develop` branch. **Never commit directly to `main`**.
-* **`develop` branch**: The **primary integration branch**. All feature branches should be merged into `develop` first for testing.
 * **Feature Branches**: Most work must be done on a dedicated branch named clearly. Use lower case with words seperated by dashes. e.g:
     * `holonomic-kinematics`
     * `path-planning`
