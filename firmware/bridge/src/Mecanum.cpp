@@ -1,7 +1,7 @@
 #include "../inc/Mecanum.h"
 
-MecanumDrive::MecanumDrive(byte flPin, byte frPin, byte blPin, byte brPin)
-  : _flMotor(flPin), _frMotor(frPin), _blMotor(blPin), _brMotor(brPin) {
+MecanumDrive::MecanumDrive(Motor &flMotor, Motor &frMotor, Motor &blMotor, Motor &brMotor)
+  : _flMotor(flMotor), _frMotor(frMotor), _blMotor(blMotor), _brMotor(brMotor) {
 }
 
 void MecanumDrive::init() {
