@@ -26,6 +26,7 @@ setup(
         'console_scripts': [
             'camera_listener = andrews_realsense.camera_listener:main',
             'tennis_ball_detector = andrews_realsense.tennis_ball_detector:main',
+	    'orbit_controller = andrews_realsense.orbit_controller:main',
         ],
     },
 )
