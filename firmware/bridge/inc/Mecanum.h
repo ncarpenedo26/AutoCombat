@@ -32,7 +32,7 @@ public:
    * @param strafe The left/right strafing speed (-1.0 to 1.0).
    * @param rotation The turning speed (clockwise/counter-clockwise) (-1.0 to 1.0).
    */
-  void drive(double forward, double strafe, double rotation);
+  void drive(double forward, double strafe, double rotation, double e1, double e2, double e3, double e4);
 
 private:
   Motor& _flMotor; // Front Left

@@ -6,6 +6,7 @@
 
 
 #include <ESP32Encoder.h>
+#include <PID_v1.h>
 #include "inc/Mecanum.h"
 #include "inc/Motor.h"
 
@@ -13,14 +14,16 @@
 // Configuration & Objects
 // ----------------------------------------------------
 const long BAUD_RATE = 115200;
-const long ENCODER_SEND_INTERVAL_MS = 50;  // Send encoder data 20 times per second
+const long ENCODER_SEND_INTERVAL_MS = 5000;  // Send encoder data 20 times per second
+const long DRIVETRAIN_UPDATE_INTERVAL_MS = 5.0;
 unsigned long lastEncoderSendTime = 0;
+unsigned long lastDrivetrainUpdateTime = 0;
 
 // TODO: PINS NOT FINAL
-Motor fl(14, 15);
-Motor fr(21, 22);
-Motor bl(16, 17);
-Motor br(18, 19);
+Motor bl(14, 27);
+Motor br(13, 12);
+Motor fr(18, 19);
+Motor fl(25, 26);
 MecanumDrive drivetrain(fl, fr, bl, br);
 
 ESP32Encoder EncoderFL;
@@ -28,9 +31,18 @@ ESP32Encoder EncoderFR;
 ESP32Encoder EncoderBL;
 ESP32Encoder EncoderBR;
 
+double prevFLCounts = 0;
+double prevFRCounts = 0;
+double prevBLCounts = 0;
+double prevBRCounts = 0;
+
 // Variables for incoming serial data
 String inputString = "";      // A string to hold incoming data
 bool stringComplete = false;  // Whether the string is complete
+
+double targetXVel = 0;
+double targetYVel = 0;
+double targetRot = 0;
 
 void setup() {
   Serial.begin(BAUD_RATE);
@@ -39,10 +51,10 @@ void setup() {
   ESP32Encoder::useInternalWeakPullResistors = puType::up;
 
   // TODO: PINS NOT FINAL
-  EncoderFL.attachHalfQuad(12, 13);
-  EncoderFR.attachHalfQuad(12, 13);
-  EncoderBL.attachHalfQuad(12, 13);
-  EncoderBR.attachHalfQuad(12, 13);
+  EncoderFL.attachHalfQuad(36, 39);
+  EncoderFR.attachHalfQuad(35, 34);
+  EncoderBL.attachHalfQuad(32, 33); // VN, VP
+  EncoderBR.attachHalfQuad(22, 23);
 
   EncoderFL.clearCount();
   EncoderFR.clearCount();
@@ -68,6 +80,29 @@ void loop() {
   if (millis() - lastEncoderSendTime >= ENCODER_SEND_INTERVAL_MS) {
     sendEncoderData();
     lastEncoderSendTime = millis();
+  }
+
+  if (millis() - lastDrivetrainUpdateTime >= DRIVETRAIN_UPDATE_INTERVAL_MS) {
+    double flCountsPerSecond = ((double)(EncoderFL.getCount() - prevFLCounts)) / ((double)DRIVETRAIN_UPDATE_INTERVAL_MS / 1000);
+    double frCountsPerSecond = ((double)(EncoderFR.getCount() - prevFRCounts)) / ((double)DRIVETRAIN_UPDATE_INTERVAL_MS / 1000);
+    double blCountsPerSecond = ((double)(EncoderBL.getCount() - prevBLCounts)) / ((double)DRIVETRAIN_UPDATE_INTERVAL_MS / 1000);
+    double brCountsPerSecond = ((double)(EncoderBR.getCount() - prevBRCounts)) / ((double)DRIVETRAIN_UPDATE_INTERVAL_MS / 1000);
+
+    drivetrain.drive(
+      targetXVel,
+      targetYVel,
+      targetRot,
+      flCountsPerSecond,
+      frCountsPerSecond,
+      blCountsPerSecond,
+      brCountsPerSecond
+     );
+
+     prevFLCounts = EncoderFL.getCount();
+     prevFRCounts = EncoderFR.getCount();
+     prevBLCounts = EncoderBL.getCount();
+     prevBRCounts = EncoderBR.getCount();
+     lastDrivetrainUpdateTime = millis();
   }
 }
 
@@ -150,5 +185,8 @@ void handleTwistCommand(String payload) {
   z_angular = zStr.toFloat();
 
   // Serial.println("X: " + String(x_vel) + ", Y: " + String(y_vel) + ", Rot: " + String(z_angular));
-  drivetrain.drive(x_vel, y_vel, z_angular);
+  targetXVel = x_vel;
+  targetYVel = y_vel;
+  targetRot = z_angular;
+  
 }
