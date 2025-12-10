@@ -12,7 +12,7 @@
 
 // ----------------------------------------------------
 // Configuration & Objects
-// ----------------------------------------------------
+// ----------------------------------------------------c:\Users\ryker\Documents\UC Berkeley Work\Senior Year\AutoCombat\firmware\bridge\inc\Mecanum.h c:\Users\ryker\Documents\UC Berkeley Work\Senior Year\AutoCombat\firmware\bridge\inc\Motor.h
 const long BAUD_RATE = 115200;
 const long ENCODER_SEND_INTERVAL_MS = 5000;  // Send encoder data 20 times per second
 const long DRIVETRAIN_UPDATE_INTERVAL_MS = 5.0;
@@ -181,7 +181,7 @@ void handleTwistCommand(String payload) {
   String zStr = payload.substring(comma2 + 1);
 
   x_vel = xStr.toFloat();
-  y_vel = yStr.toFloat();
+  y_vel = -yStr.toFloat();
   z_angular = zStr.toFloat();
 
   // Serial.println("X: " + String(x_vel) + ", Y: " + String(y_vel) + ", Rot: " + String(z_angular));
