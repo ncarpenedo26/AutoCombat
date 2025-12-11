@@ -6,7 +6,6 @@
 
 
 #include <ESP32Encoder.h>
-#include <PID_v1.h>
 #include "inc/Mecanum.h"
 #include "inc/Motor.h"
 
@@ -53,7 +52,7 @@ void setup() {
   // TODO: PINS NOT FINAL
   EncoderFL.attachHalfQuad(36, 39);
   EncoderFR.attachHalfQuad(35, 34);
-  EncoderBL.attachHalfQuad(32, 33); // VN, VP
+  EncoderBL.attachHalfQuad(32, 33);  // VN, VP
   EncoderBR.attachHalfQuad(22, 23);
 
   EncoderFL.clearCount();
@@ -95,14 +94,13 @@ void loop() {
       flCountsPerSecond,
       frCountsPerSecond,
       blCountsPerSecond,
-      brCountsPerSecond
-     );
+      brCountsPerSecond);
 
-     prevFLCounts = EncoderFL.getCount();
-     prevFRCounts = EncoderFR.getCount();
-     prevBLCounts = EncoderBL.getCount();
-     prevBRCounts = EncoderBR.getCount();
-     lastDrivetrainUpdateTime = millis();
+    prevFLCounts = EncoderFL.getCount();
+    prevFRCounts = EncoderFR.getCount();
+    prevBLCounts = EncoderBL.getCount();
+    prevBRCounts = EncoderBR.getCount();
+    lastDrivetrainUpdateTime = millis();
   }
 }
 
@@ -188,5 +186,4 @@ void handleTwistCommand(String payload) {
   targetXVel = x_vel;
   targetYVel = y_vel;
   targetRot = z_angular;
-  
 }

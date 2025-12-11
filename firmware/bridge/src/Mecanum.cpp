@@ -1,5 +1,5 @@
 #include "../inc/Mecanum.h"
-#include <PID_v1.h>
+#include <PID_v1_bc.h>
 
 #define MAX_MOTOR_SPEED 2.0 // Revolutions / second
 #define REDUCTION 31.5 // 31.5:1 gear reduction
@@ -7,7 +7,7 @@
 
 //front left PID
 double flSetpoint, flInput, flOutput;
-double flKp=0.5, flKi=0.0, flKd=0.2;
+double flKp=0.4, flKi=0.0, flKd=0.0;
 PID flPID(&flInput, &flOutput, &flSetpoint, flKp, flKi, flKd, DIRECT);
 
 //front right PID
@@ -34,6 +34,16 @@ double countsToRevolutions(double count) {
   return ((double)count) / (PPR * REDUCTION * 2);
 }
 
+int sign(double num) {
+  if (num > 0) {
+    return 1;
+  } else if (num < 0) {
+    return -1;
+  } else {
+    return 0;
+  }
+}
+
 void MecanumDrive::init() {
   _flMotor.init();
   _frMotor.init();
@@ -50,10 +60,10 @@ void MecanumDrive::init() {
   blPID.SetMode(AUTOMATIC);
   brPID.SetMode(AUTOMATIC);
 
-  flPID.SetOutputLimits(-255, 255);
-  frPID.SetOutputLimits(-255, 255);
-  blPID.SetOutputLimits(-255, 255);
-  brPID.SetOutputLimits(-255, 255);
+  // flPID.SetOutputLimits(-255, 255);
+  // frPID.SetOutputLimits(-255, 255);
+  // blPID.SetOutputLimits(-255, 255);
+  // brPID.SetOutputLimits(-255, 255);
 
 }
 
@@ -91,15 +101,22 @@ void MecanumDrive::drive(double forward, double strafe, double rotation, double 
   // Serial.println("RPS 1: " + String(flInput, 2) + " | RPS 2: " + String(frInput, 2) + " | RPS 3: " + String(blInput, 2) + " | RPS 4: " + String(brInput, 2));
   // Serial.println("V1: " + String(flOutput, 2) + " | V2: " + String(frOutput, 2) + " | V3: " + String(blOutput, 2) + " | V4: " + String(brOutput, 2));
 
-  Serial.println(String(flInput) + "," + String(flOutput) + "," + String(flSetpoint) );
-
+  //Serial.println("Real Speed" + String(flInput) + "," + "Output normalized PWM Signal" + String(flOutput) + "," + "Goal Speed" + String(flSetpoint) );
+ 
   // _flMotor.set(flOutput);
   // _frMotor.set(frOutput);
   // _blMotor.set(blOutput);
   // _brMotor.set(brOutput);
 
   normalize(v1, v2, v3, v4);
-
+  Serial.print("Real_Speed:");
+  Serial.print(String(flInput));
+  Serial.print(" ");
+  Serial.print("Output_PWM_Signal:");
+  Serial.print(String(v1));
+  Serial.print(" ");
+  Serial.print("Goal_Speed:");
+  Serial.println(String(flSetpoint));
   _flMotor.set(v1);
   _frMotor.set(v2);
   _blMotor.set(v3);
@@ -125,4 +142,13 @@ void MecanumDrive::normalize(double& v1, double& v2, double& v3, double& v4) {
     v3 /= maxAbsSpeed;
     v4 /= maxAbsSpeed;
   }
+  int dirv1 = sign(v1);
+  int dirv2 = sign(v2);
+  int dirv3 = sign(v3);
+  int dirv4 = sign(v4);
+  
+  v1 = dirv1 * map(int(abs(v1) * 100), 0, 100, 50, 100) / 100.0;
+  v2 = dirv2 * map(int(abs(v2) * 100), 0, 100, 50, 100) / 100.0;
+  v3 = dirv3 * map(int(abs(v3) * 100), 0, 100, 50, 100) / 100.0;
+  v4 = dirv4 * map(int(abs(v4) * 100), 0, 100, 50, 100) / 100.0;
 }
