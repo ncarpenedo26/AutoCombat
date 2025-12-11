@@ -3,39 +3,23 @@ from rclpy.node import Node
 from geometry_msgs.msg import PointStamped, Twist
 import math
 
-
 class OrbitController(Node):
-    """
-    Frame (your setup):
-      x: forward
-      y: left
-      z: up
-
-    Subscribes:
-      /ball_pose (geometry_msgs/PointStamped)  -- ball in robot/camera frame
-
-    Publishes:
-      /cmd_vel (geometry_msgs/Twist)
-
-    Behavior:
-      - Keep ball at ~target_distance along +x
-      - Keep ball horizontally centered (y ≈ 0) using yaw
-      - When near target distance, start orbiting around the ball by strafing right
-    """
-
     def __init__(self):
         super().__init__('orbit_controller')
 
         # === Parameters ===
-        self.declare_parameter('target_distance', 0.8)   # meters along +x
-        self.declare_parameter('k_dist', 0.8)            # gain for distance (x)
-        self.declare_parameter('k_yaw', 1.2)             # gain for centering (yaw)
-        self.declare_parameter('max_linear', 0.4)
-        self.declare_parameter('max_angular', 1.5)
+        self.declare_parameter('target_distance', 0.5)
+        self.declare_parameter('k_dist', 1.0)
+        self.declare_parameter('k_yaw', 1.5)
+        self.declare_parameter('max_linear', 1.0)
+        self.declare_parameter('max_angular', 3.0)
+        self.declare_parameter('orbit_speed', 1.0)
+        self.declare_parameter('orbit_band', 0.15)
+        self.declare_parameter('attack_threshold', 0.1)
 
-        # Orbit-specific params
-        self.declare_parameter('orbit_speed', 0.15)      # m/s sideways when orbiting
-        self.declare_parameter('orbit_band', 0.10)       # m distance error band to allow orbit
+        # Search Params
+        self.declare_parameter('search_spin_speed', 1.0)
+        self.declare_parameter('search_duration', 2.0)
 
         self.target_distance = float(self.get_parameter('target_distance').value)
         self.k_dist = float(self.get_parameter('k_dist').value)
@@ -44,32 +28,21 @@ class OrbitController(Node):
         self.max_angular = float(self.get_parameter('max_angular').value)
         self.orbit_speed = float(self.get_parameter('orbit_speed').value)
         self.orbit_band = float(self.get_parameter('orbit_band').value)
+        self.attack_threshold = float(self.get_parameter('attack_threshold').value)
 
-        # Last ball pose
+        # State
         self.last_ball = None
         self.last_ball_time = None
-        self.ball_timeout = 1.0  # seconds
+        self.ball_timeout = 0.5 
+        
+        # Search Memory
+        self.last_known_side = 0.0 
 
-        # Publisher: /cmd_vel
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
-
-        # Subscriber: /ball_pose from your camera_listener
-        self.ball_sub = self.create_subscription(
-            PointStamped,
-            '/ball_pose',
-            self.ball_callback,
-            10
-        )
-
-        # Control loop timer (20 Hz)
+        self.ball_sub = self.create_subscription(PointStamped, '/ball_pose', self.ball_callback, 10)
         self.timer = self.create_timer(0.05, self.control_loop)
 
-        self.get_logger().info(
-            'OrbitController started:\n'
-            '  - x: forward distance control\n'
-            '  - y: sideways orbit to the RIGHT (negative y)\n'
-            '  - z: up (ignored)\n'
-        )
+        self.get_logger().info('OrbitController: READY (Steering Inverted).')
 
     def ball_callback(self, msg: PointStamped):
         self.last_ball = msg
@@ -77,66 +50,77 @@ class OrbitController(Node):
 
     def control_loop(self):
         twist = Twist()
-
-        # If we haven’t seen the ball recently, stop the robot
         now = self.get_clock().now()
+
+        # 1. Safety Check
         if self.last_ball is None or self.last_ball_time is None:
             self.cmd_pub.publish(twist)
             return
-
+        
         dt = (now - self.last_ball_time).nanoseconds * 1e-9
+
+        # === 2. LOST BALL LOGIC ===
         if dt > self.ball_timeout:
-            # Ball lost: stop
+            search_dur = self.get_parameter('search_duration').value
+            
+            # If lost briefly, SPIN to find it
+            if dt < search_dur:
+                spin_speed = self.get_parameter('search_spin_speed').value
+                # Spin direction follows the inverted logic too
+                direction = 1.0 if self.last_known_side >= 0 else -1.0
+                
+                twist.angular.z = direction * spin_speed
+                self.get_logger().info(f"SEARCHING... Spinning {'LEFT' if direction>0 else 'RIGHT'}", throttle_duration_sec=0.5)
+            else:
+                self.get_logger().info("TARGET LOST. Stopping.", throttle_duration_sec=2.0)
+                
             self.cmd_pub.publish(twist)
             return
 
-        # Ball pose in your frame:
-        #   x: forward distance
-        #   y: left/right
-        #   z: up (ignored here)
-        x = self.last_ball.point.x
-        y = self.last_ball.point.y
+        # === 3. Coordinate Transform (FIXED) ===
+        robot_val_x = self.last_ball.point.z 
+        
+        # FIX: Removed the negative sign. 
+        # Previously it was "-self.last_ball.point.x". 
+        # Removing the "-" flips the steering direction.
+        robot_val_y = self.last_ball.point.x
 
-        # === 1) Distance control along x (allows going backwards if too close) ===
-        dist_error = x - self.target_distance
-        v_forward = self.k_dist * dist_error   # >0 -> move forward, <0 -> move backwards
+        # Update Memory for Search
+        if abs(robot_val_y) > 0.05:
+            self.last_known_side = robot_val_y
 
-        # === 2) Centering control via yaw (keep ball at y ≈ 0 in the FOV) ===
-        # y > 0 => ball is left => want positive angular.z (turn left)
-        yaw_error = y
-        w_yaw = self.k_yaw * yaw_error
-
-        # === 3) Orbit: sideways motion in y when at roughly correct distance ===
-        # We want to orbit to the RIGHT => negative linear.y
-        if abs(dist_error) < self.orbit_band:
-            v_side = -self.orbit_speed   # move right
+        # === 4. Control Logic ===
+        if robot_val_x < self.attack_threshold:
+            # RAMMING SPEED
+            self.get_logger().info("ATTACK MODE ACTIVE", throttle_duration_sec=0.5)
+            twist.linear.x = self.max_linear
+            twist.linear.y = 0.0
+            twist.angular.z = 0.0
+            
         else:
-            v_side = 0.0                 # focus on fixing radius first
+            # ORBIT MODE
+            dist_error = robot_val_x - self.target_distance
+            v_forward = self.k_dist * dist_error
+            w_yaw = self.k_yaw * robot_val_y 
 
-        # Clamp speeds
-        v_forward = max(min(v_forward, self.max_linear), -self.max_linear)
-        v_side = max(min(v_side, self.max_linear), -self.max_linear)
-        w_yaw = max(min(w_yaw, self.max_angular), -self.max_angular)
+            v_side = 0.0
+            if abs(dist_error) < self.orbit_band:
+                v_side = -self.orbit_speed 
 
-        twist.linear.x = float(v_forward)
-        twist.linear.y = float(v_side)
-        twist.linear.z = 0.0
-        twist.angular.x = 0.0
-        twist.angular.y = 0.0
-        twist.angular.z = float(w_yaw)
+            # Apply limits
+            twist.linear.x = float(max(min(v_forward, self.max_linear), -self.max_linear))
+            twist.linear.y = float(max(min(v_side, self.max_linear), -self.max_linear))
+            twist.angular.z = float(max(min(w_yaw, self.max_angular), -self.max_angular))
 
         self.cmd_pub.publish(twist)
-
 
 def main(args=None):
     rclpy.init(args=args)
     node = OrbitController()
-    try:
-        rclpy.spin(node)
+    try: rclpy.spin(node)
+    except KeyboardInterrupt: pass
     finally:
         node.destroy_node()
         rclpy.shutdown()
 
-
-if __name__ == '__main__':
-    main()
+if __name__ == '__main__':main()
