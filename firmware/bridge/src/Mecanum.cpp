@@ -1,13 +1,14 @@
 #include "../inc/Mecanum.h"
 #include <PID_v1_bc.h>
 
-#define MAX_MOTOR_SPEED 2.0 // Revolutions / second
+#define MAX_MOTOR_SPEED 1.0 // Revolutions / second
 #define REDUCTION 31.5 // 31.5:1 gear reduction
 #define PPR 7 // Encoder pulses per revolution
 
 //front left PID
 double flSetpoint, flInput, flOutput;
-double flKp=0.4, flKi=0.0, flKd=0.0;
+double flKp=0.5, flKi=0.0, flKd=0.2;
+double flprevErr=0, flprevPWM=0;
 PID flPID(&flInput, &flOutput, &flSetpoint, flKp, flKi, flKd, DIRECT);
 
 //front right PID
@@ -42,6 +43,17 @@ int sign(double num) {
   } else {
     return 0;
   }
+}
+
+double computePID(double input, double setpoint, double& prevErr, double kp, double ki, double kd) {
+  double err = setpoint - input;
+  double errdot = err - prevErr;
+  double output = kp * err + kd * errdot;//+ prevPWM;
+  prevErr = err;
+  if (sign(setpoint) != sign(output)) {
+    output = 0;
+  }
+  return output;
 }
 
 void MecanumDrive::init() {
@@ -91,6 +103,8 @@ void MecanumDrive::drive(double forward, double strafe, double rotation, double 
   blInput = countsToRevolutions(e3);
   brInput = countsToRevolutions(e4);
 
+  double flOut = computePID(flInput, flSetpoint, flprevErr, flKp, flKi, flKd);
+
   flPID.Compute();
   frPID.Compute();
   blPID.Compute();
@@ -108,19 +122,19 @@ void MecanumDrive::drive(double forward, double strafe, double rotation, double 
   // _blMotor.set(blOutput);
   // _brMotor.set(brOutput);
 
-  normalize(v1, v2, v3, v4);
+  normalize(flOut, flOut, flOut, flOut);
   Serial.print("Real_Speed:");
   Serial.print(String(flInput));
   Serial.print(" ");
   Serial.print("Output_PWM_Signal:");
-  Serial.print(String(v1));
+  Serial.print(String(flOut));
   Serial.print(" ");
   Serial.print("Goal_Speed:");
   Serial.println(String(flSetpoint));
-  _flMotor.set(v1);
-  _frMotor.set(v2);
-  _blMotor.set(v3);
-  _brMotor.set(v4);
+  _flMotor.set(flOut);
+  _frMotor.set(0);
+  _blMotor.set(0);
+  _brMotor.set(0);
 }
 
 /**

@@ -82,10 +82,10 @@ void loop() {
   }
 
   if (millis() - lastDrivetrainUpdateTime >= DRIVETRAIN_UPDATE_INTERVAL_MS) {
-    double flCountsPerSecond = ((double)(EncoderFL.getCount() - prevFLCounts)) / ((double)DRIVETRAIN_UPDATE_INTERVAL_MS / 1000);
-    double frCountsPerSecond = ((double)(EncoderFR.getCount() - prevFRCounts)) / ((double)DRIVETRAIN_UPDATE_INTERVAL_MS / 1000);
-    double blCountsPerSecond = ((double)(EncoderBL.getCount() - prevBLCounts)) / ((double)DRIVETRAIN_UPDATE_INTERVAL_MS / 1000);
-    double brCountsPerSecond = ((double)(EncoderBR.getCount() - prevBRCounts)) / ((double)DRIVETRAIN_UPDATE_INTERVAL_MS / 1000);
+    double flCountsPerSecond = ((double)(EncoderFL.getCount() - prevFLCounts)) * 1000 / ((double)DRIVETRAIN_UPDATE_INTERVAL_MS);
+    double frCountsPerSecond = ((double)(EncoderFR.getCount() - prevFRCounts)) * 1000 / ((double)DRIVETRAIN_UPDATE_INTERVAL_MS);
+    double blCountsPerSecond = ((double)(EncoderBL.getCount() - prevBLCounts)) * 1000 / ((double)DRIVETRAIN_UPDATE_INTERVAL_MS);
+    double brCountsPerSecond = ((double)(EncoderBR.getCount() - prevBRCounts)) * 1000 / ((double)DRIVETRAIN_UPDATE_INTERVAL_MS);
 
     drivetrain.drive(
       targetXVel,
