@@ -7,28 +7,30 @@
 
 //front left PID
 double flKp=0.5, flKi=0.05, flKd=0.2;
-PID flPID(flKp, flKi, flKd, false, 5);
+PID flPID(flKp, flKi, flKd, false, 10);
 
-double frKp=0.5, frKi=0.0, frKd=0.2;
-PID frPID(frKp, frKi, frKd, false, 5);
+double frKp=0.5, frKi=0.05, frKd=0.2;
+PID frPID(frKp, frKi, frKd, false, 10);
 
 //back left PID
-double blKp=0.5, blKi=0.0, blKd=0.2;
-PID blPID(blKp, blKi, blKd, false, 5);
+double blKp=0.5, blKi=0.05, blKd=0.2;
+PID blPID(blKp, blKi, blKd, false, 10);
 
 //back right PID
-double brKp=0.5, brKi=0.0, brKd=0.2;
-PID brPID(brKp, brKi, brKd, false, 5);
+double brKp=0.5, brKi=0.05, brKd=0.2;
+PID brPID(brKp, brKi, brKd, false, 10);
 
 MecanumDrive::MecanumDrive(Motor &flMotor, Motor &frMotor, Motor &blMotor, Motor &brMotor)
   : _flMotor(flMotor), _frMotor(frMotor), _blMotor(blMotor), _brMotor(brMotor) {
 }
 
+// Calculates encoder counts to revolutions
 double countsToRevolutions(double count) {
   // Extra divide by 2 because quadrature?
   return ((double)count) / (PPR * REDUCTION * 2);
 }
 
+// calculates signs
 int sign(double num) {
   if (num > 0) {
     return 1;
@@ -57,9 +59,6 @@ void MecanumDrive::drive(double forward, double strafe, double rotation, double 
   double v3 = forward - strafe + rotation;
   double v4 = forward + strafe - rotation;
 
-  // TODO: do we need to normalize here?
-  // normalize(v1, v2, v3, v4);
-
   flPID.setSetpoint(v1);
   frPID.setSetpoint(v2);
   blPID.setSetpoint(v3);
@@ -76,19 +75,7 @@ void MecanumDrive::drive(double forward, double strafe, double rotation, double 
   double blOut = blPID.compute(blInput);
   double brOut = brPID.compute(brInput);
 
-  // Serial.println("Setpoint 1: " + String(v1, 2) + " | Setpoint 2: " + String(v2, 2) + " | Setpoint 3: " + String(v3, 2) + " | Setpoint 4: " + String(v4, 2));
-  // Serial.println("E 1: " + String(e1, 2) + " | E 2: " + String(e2, 2) + " | E 3: " + String(e3, 2) + " | E 4: " + String(e4, 2));
-  // Serial.println("RPS 1: " + String(flInput, 2) + " | RPS 2: " + String(frInput, 2) + " | RPS 3: " + String(blInput, 2) + " | RPS 4: " + String(brInput, 2));
-  // Serial.println("V1: " + String(flOutput, 2) + " | V2: " + String(frOutput, 2) + " | V3: " + String(blOutput, 2) + " | V4: " + String(brOutput, 2));
-
-  //Serial.println("Real Speed" + String(flInput) + "," + "Output normalized PWM Signal" + String(flOutput) + "," + "Goal Speed" + String(flSetpoint) );
- 
-  // _flMotor.set(flOutput);
-  // _frMotor.set(frOutput);
-  // _blMotor.set(blOutput);
-  // _brMotor.set(brOutput);
-
-  normalize(flOut, flOut, flOut, flOut);
+  normalize(flOut, frOut, blOut, brOut);
   
   // Serial.print("Real_Speed:");
   // Serial.print(String(flInput));
@@ -104,9 +91,9 @@ void MecanumDrive::drive(double forward, double strafe, double rotation, double 
   flPID.debugPrint();
 
   _flMotor.set(flOut);
-  _frMotor.set(0);
-  _blMotor.set(0);
-  _brMotor.set(0);
+  _frMotor.set(frOut);
+  _blMotor.set(blOut);
+  _brMotor.set(brOut);
 }
 
 /**
@@ -114,20 +101,12 @@ void MecanumDrive::drive(double forward, double strafe, double rotation, double 
  * This ensures the commanded speed does not exceed the maximum motor velocity (1.0).
  */
 void MecanumDrive::normalize(double& v1, double& v2, double& v3, double& v4) {
-  // Find the maximum absolute value among all four speeds
-  double maxAbsSpeed = 0.0;
-  maxAbsSpeed = max(maxAbsSpeed, abs(v1));
-  maxAbsSpeed = max(maxAbsSpeed, abs(v2));
-  maxAbsSpeed = max(maxAbsSpeed, abs(v3));
-  maxAbsSpeed = max(maxAbsSpeed, abs(v4));
 
-  // If the maximum speed exceeds 1.0, scale all speeds down by that factor.
-  if (maxAbsSpeed > MAX_MOTOR_SPEED) {
-    v1 /= maxAbsSpeed;
-    v2 /= maxAbsSpeed;
-    v3 /= maxAbsSpeed;
-    v4 /= maxAbsSpeed;
-  }
+  v1 = (abs(v1) > MAX_MOTOR_SPEED) ? v1 / abs(v1) : v1;
+  v2 = (abs(v2) > MAX_MOTOR_SPEED) ? v2 / abs(v2) : v2;
+  v3 = (abs(v3) > MAX_MOTOR_SPEED) ? v3 / abs(v3) : v3;
+  v4 = (abs(v4) > MAX_MOTOR_SPEED) ? v4 / abs(v4) : v4;
+
   int dirv1 = sign(v1);
   int dirv2 = sign(v2);
   int dirv3 = sign(v3);

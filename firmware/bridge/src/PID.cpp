@@ -4,6 +4,16 @@
 PID::PID(double kP, double kI, double kD, bool allowReverse=true, double maxAccumulatedError=0) :
   _kP(kP), _kI(kI), _kD(kD), _allowReverse(allowReverse), _maxAccumulatedError(maxAccumulatedError) {}
 
+int signs(double num) {
+  if (num > 0) {
+    return 1;
+  } else if (num < 0) {
+    return -1;
+  } else {
+    return 0;
+  }
+}
+
 void PID::setSetpoint(double setpoint) {
   _setpoint = setpoint;
 }
@@ -25,15 +35,18 @@ void PID::debugPrint() {
 double PID::compute(double input) {
   double err = _setpoint - input;
   double errdot = err - _prevError;
-  double output = _kP * err + _kD * errdot + _kI * _accumulatedError; //+ prevPWM;
+  double output = _kP * err + _kD * errdot + _kI * _accumulatedError;
 
   _prevError = err;
-  if (abs(_accumulatedError + err) < _maxAccumulatedError && abs(err) < 1.0) {
-    _accumulatedError += err;
+  _accumulatedError += err;
+  if (_accumulatedError > _maxAccumulatedError) {
+    _accumulatedError = _maxAccumulatedError;
+  } else if (_accumulatedError < -_maxAccumulatedError) {
+    _accumulatedError = -_maxAccumulatedError;
   }
 
   // Output 0 if reverse is disallowed
-  if (!_allowReverse && _setpoint * input < 0) {
+  if (signs(_setpoint) != signs(output)) {
     output = 0;
   }
 
@@ -41,3 +54,4 @@ double PID::compute(double input) {
 
   return output;
 }
+
