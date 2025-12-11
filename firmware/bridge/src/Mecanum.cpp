@@ -5,18 +5,8 @@
 #define REDUCTION 31.5 // 31.5:1 gear reduction
 #define PPR 7 // Encoder pulses per revolution
 
-int sign(double num) {
-  if (num > 0) {
-    return 1;
-  } else if (num < 0) {
-    return -1;
-  } else {
-    return 0;
-  }
-}
-
 //front left PID
-double flKp=0.5, flKi=0.0, flKd=0.2;
+double flKp=0.5, flKi=0.05, flKd=0.2;
 PID flPID(flKp, flKi, flKd, false, 5);
 
 double frKp=0.5, frKi=0.0, frKd=0.2;
@@ -37,6 +27,16 @@ MecanumDrive::MecanumDrive(Motor &flMotor, Motor &frMotor, Motor &blMotor, Motor
 double countsToRevolutions(double count) {
   // Extra divide by 2 because quadrature?
   return ((double)count) / (PPR * REDUCTION * 2);
+}
+
+int sign(double num) {
+  if (num > 0) {
+    return 1;
+  } else if (num < 0) {
+    return -1;
+  } else {
+    return 0;
+  }
 }
 
 void MecanumDrive::init() {
@@ -90,14 +90,18 @@ void MecanumDrive::drive(double forward, double strafe, double rotation, double 
 
   normalize(flOut, flOut, flOut, flOut);
   
-  Serial.print("Real_Speed:");
-  Serial.print(String(flInput));
-  Serial.print(" ");
-  Serial.print("Output_PWM_Signal:");
-  Serial.print(String(flOut));
-  Serial.print(" ");
-  Serial.print("Goal_Speed:");
-  Serial.println(String(v1));
+  // Serial.print("Real_Speed:");
+  // Serial.print(String(flInput));
+  // Serial.print(" ");
+  // Serial.print("Output_PWM_Signal:");
+  // Serial.print(String(flOut));
+  // Serial.print(" ");
+  // Serial.print("Goal_Speed:");
+  // Serial.print(String(v1));
+  // Serial.print(" ");
+  // Serial.print("Error_Sum:");
+  // Serial.println(String(fltotalErr));
+  flPID.debugPrint();
 
   _flMotor.set(flOut);
   _frMotor.set(0);

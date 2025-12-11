@@ -8,6 +8,7 @@ public:
 
   double compute(double input);
   void setSetpoint(double setpoint);
+  void debugPrint();
 
 private:
   double _setpoint = 0;
@@ -18,6 +19,7 @@ private:
 
   double _prevError = 0;
   double _accumulatedError = 0;
+  double _prevInput = 0;
 
   bool _allowReverse = true;
 
