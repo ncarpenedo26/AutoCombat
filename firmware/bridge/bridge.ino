@@ -11,12 +11,30 @@
 
 // ----------------------------------------------------
 // Configuration & Objects
-// ----------------------------------------------------c:\Users\ryker\Documents\UC Berkeley Work\Senior Year\AutoCombat\firmware\bridge\inc\Mecanum.h c:\Users\ryker\Documents\UC Berkeley Work\Senior Year\AutoCombat\firmware\bridge\inc\Motor.h
+// ----------------------------------------------------
 const long BAUD_RATE = 115200;
-const long ENCODER_SEND_INTERVAL_MS = 5000;  // Send encoder data 20 times per second
+const long ODOMETRY_COMPUTE_INTERVAL_MS = 50;  // Send encoder data 20 times per second
 const long DRIVETRAIN_UPDATE_INTERVAL_MS = 5.0;
-unsigned long lastEncoderSendTime = 0;
+const double DRIVETRAIN_WHEELBASE = 0.15; // meters
+const double REDUCTION = 31.5; // 31.5:1 gear reduction
+const int PPR = 7; // Encoder pulses per revolution
+const double WHEEL_RADIUS = 0.024;
+
+unsigned long lastOdometryCalcTime = 0;
 unsigned long lastDrivetrainUpdateTime = 0;
+
+// Calculates encoder counts to revolutions
+double countsToRadians(double count) {
+  // Extra divide by 2 because quadrature?
+  double revolutions = ((double)count) / (PPR * REDUCTION * 2);
+  return revolutions * 2 * PI;
+}
+
+// dt in SECONDS
+double getAngularVelocity(int deltaCounts, double elapsed_ms) {
+  double countsPerSecond = ((double)(deltaCounts)) * 1000 / ((double)elapsed_ms);
+  return countsToRadians(countsPerSecond);
+}
 
 // TODO: PINS NOT FINAL
 Motor bl(14, 27);
@@ -30,10 +48,15 @@ ESP32Encoder EncoderFR;
 ESP32Encoder EncoderBL;
 ESP32Encoder EncoderBR;
 
-double prevFLCounts = 0;
-double prevFRCounts = 0;
-double prevBLCounts = 0;
-double prevBRCounts = 0;
+int prevFLCountsDrive = 0;
+int prevFRCountsDrive = 0;
+int prevBLCountsDrive = 0;
+int prevBRCountsDrive = 0;
+
+int prevFLCountsOdom = 0;
+int prevFRCountsOdom = 0;
+int prevBLCountsOdom = 0;
+int prevBRCountsOdom = 0;
 
 // Variables for incoming serial data
 String inputString = "";      // A string to hold incoming data
@@ -42,6 +65,10 @@ bool stringComplete = false;  // Whether the string is complete
 double targetXVel = 0;
 double targetYVel = 0;
 double targetRot = 0;
+
+double posX = 0;
+double posY = 0;
+double theta = 0;
 
 void setup() {
   Serial.begin(BAUD_RATE);
@@ -76,51 +103,77 @@ void loop() {
   }
 
   // Non-blocking Encoder Data Transmission
-  if (millis() - lastEncoderSendTime >= ENCODER_SEND_INTERVAL_MS) {
-    sendEncoderData();
-    lastEncoderSendTime = millis();
+  if (millis() - lastOdometryCalcTime >= ODOMETRY_COMPUTE_INTERVAL_MS) {
+    sendOdometryData();
+    lastOdometryCalcTime = millis();
   }
 
   if (millis() - lastDrivetrainUpdateTime >= DRIVETRAIN_UPDATE_INTERVAL_MS) {
-    double flCountsPerSecond = ((double)(EncoderFL.getCount() - prevFLCounts)) * 1000 / ((double)DRIVETRAIN_UPDATE_INTERVAL_MS);
-    double frCountsPerSecond = ((double)(EncoderFR.getCount() - prevFRCounts)) * 1000 / ((double)DRIVETRAIN_UPDATE_INTERVAL_MS);
-    double blCountsPerSecond = ((double)(EncoderBL.getCount() - prevBLCounts)) * 1000 / ((double)DRIVETRAIN_UPDATE_INTERVAL_MS);
-    double brCountsPerSecond = ((double)(EncoderBR.getCount() - prevBRCounts)) * 1000 / ((double)DRIVETRAIN_UPDATE_INTERVAL_MS);
+    double flAngularVelocity = getAngularVelocity(EncoderFL.getCount() - prevFLCountsDrive, DRIVETRAIN_UPDATE_INTERVAL_MS);
+    double frAngularVelocity = getAngularVelocity(EncoderFR.getCount() - prevFRCountsDrive, DRIVETRAIN_UPDATE_INTERVAL_MS);
+    double blAngularVelocity = getAngularVelocity(EncoderBL.getCount() - prevBLCountsDrive, DRIVETRAIN_UPDATE_INTERVAL_MS);
+    double brAngularVelocity = getAngularVelocity(EncoderBR.getCount() - prevBRCountsDrive, DRIVETRAIN_UPDATE_INTERVAL_MS);
 
     drivetrain.drive(
       targetXVel,
       targetYVel,
       targetRot,
-      flCountsPerSecond,
-      frCountsPerSecond,
-      blCountsPerSecond,
-      brCountsPerSecond);
+      flAngularVelocity,
+      frAngularVelocity,
+      blAngularVelocity,
+      brAngularVelocity);
 
-    prevFLCounts = EncoderFL.getCount();
-    prevFRCounts = EncoderFR.getCount();
-    prevBLCounts = EncoderBL.getCount();
-    prevBRCounts = EncoderBR.getCount();
+    prevFLCountsDrive = EncoderFL.getCount();
+    prevFRCountsDrive = EncoderFR.getCount();
+    prevBLCountsDrive = EncoderBL.getCount();
+    prevBRCountsDrive = EncoderBR.getCount();
     lastDrivetrainUpdateTime = millis();
   }
 }
 
 
-void sendEncoderData() {
-  double rotFL = EncoderFL.getCount();
-  double rotFR = EncoderFR.getCount();
-  double rotBL = EncoderBL.getCount();
-  double rotBR = EncoderBR.getCount();
+void sendOdometryData() {
+  int rotFL = EncoderFL.getCount();
+  int rotFR = EncoderFR.getCount();
+  int rotBL = EncoderBL.getCount();
+  int rotBR = EncoderBR.getCount();
+
+  double flAngularVel = getAngularVelocity(rotFL - prevFLCountsOdom, ODOMETRY_COMPUTE_INTERVAL_MS);
+  double frAngularVel = getAngularVelocity(rotFR - prevFRCountsOdom, ODOMETRY_COMPUTE_INTERVAL_MS);
+  double blAngularVel = getAngularVelocity(rotBL - prevBLCountsOdom, ODOMETRY_COMPUTE_INTERVAL_MS);
+  double brAngularVel = getAngularVelocity(rotBR - prevBRCountsOdom, ODOMETRY_COMPUTE_INTERVAL_MS);
+
+  double vx = (flAngularVel + frAngularVel + blAngularVel + brAngularVel) * WHEEL_RADIUS / 4;
+  double vy = (-flAngularVel + frAngularVel + blAngularVel - brAngularVel) * WHEEL_RADIUS / 4;
+  double wz = (-flAngularVel + frAngularVel - blAngularVel + brAngularVel) * WHEEL_RADIUS / (4 * DRIVETRAIN_WHEELBASE);
+
+  posX += vx * ODOMETRY_COMPUTE_INTERVAL_MS / 1000;
+  posY += vy * ODOMETRY_COMPUTE_INTERVAL_MS / 1000;
+  theta += wz * ODOMETRY_COMPUTE_INTERVAL_MS / 1000;
 
   String serializedData = "M";
-  serializedData += String(rotFL, 3);
+  serializedData += String(posX, 3);
   serializedData += ",";
-  serializedData += String(rotFR, 3);
+  serializedData += String(posY, 3);
   serializedData += ",";
-  serializedData += String(rotBL, 3);
-  serializedData += ",";
-  serializedData += String(rotBR, 3);
+  serializedData += String(theta, 3);
+
+  // String serializedData = "M";
+  // serializedData += String(rotFL, 3);
+  // serializedData += ",";
+  // serializedData += String(rotFR, 3);
+  // serializedData += ",";
+  // serializedData += String(rotBL, 3);
+  // serializedData += ",";
+  // serializedData += String(rotBR, 3);
 
   Serial.println(serializedData);
+
+  prevFLCountsOdom = rotFL;
+  prevFRCountsOdom = rotFR;
+  prevBLCountsOdom = rotBL;
+  prevBRCountsOdom = rotBR;
+
   return;
 }
 
@@ -179,7 +232,7 @@ void handleTwistCommand(String payload) {
   String zStr = payload.substring(comma2 + 1);
 
   x_vel = xStr.toFloat();
-  y_vel = -yStr.toFloat();
+  y_vel = yStr.toFloat();
   z_angular = zStr.toFloat();
 
   // Serial.println("X: " + String(x_vel) + ", Y: " + String(y_vel) + ", Rot: " + String(z_angular));

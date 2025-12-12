@@ -5,29 +5,27 @@
 #define REDUCTION 31.5 // 31.5:1 gear reduction
 #define PPR 7 // Encoder pulses per revolution
 
-//front left PID
-double flKp=0.5, flKi=0.05, flKd=0.2;
-PID flPID(flKp, flKi, flKd, false, 10);
+const double WHEEL_RADIUS = 0.024;
+const double DRIVETRAIN_WHEELBASE = 0.15;
 
-double frKp=0.5, frKi=0.05, frKd=0.2;
-PID frPID(frKp, frKi, frKd, false, 10);
+//front left PID
+double flKp=1, flKi=0.1, flKd=0.3;
+PID flPID(flKp, flKi, flKd, false, 20);
+
+double frKp=1, frKi=0.1, frKd=0.3;
+PID frPID(frKp, frKi, frKd, false, 20);
 
 //back left PID
-double blKp=0.5, blKi=0.05, blKd=0.2;
-PID blPID(blKp, blKi, blKd, false, 10);
+double blKp=1, blKi=0.1, blKd=0.3;
+PID blPID(blKp, blKi, blKd, false, 20);
 
 //back right PID
-double brKp=0.5, brKi=0.05, brKd=0.2;
-PID brPID(brKp, brKi, brKd, false, 10);
+double brKp=1, brKi=0.1, brKd=0.3;
+PID brPID(brKp, brKi, brKd, false, 20);
+
 
 MecanumDrive::MecanumDrive(Motor &flMotor, Motor &frMotor, Motor &blMotor, Motor &brMotor)
   : _flMotor(flMotor), _frMotor(frMotor), _blMotor(blMotor), _brMotor(brMotor) {
-}
-
-// Calculates encoder counts to revolutions
-double countsToRevolutions(double count) {
-  // Extra divide by 2 because quadrature?
-  return ((double)count) / (PPR * REDUCTION * 2);
 }
 
 // calculates signs
@@ -54,41 +52,27 @@ void MecanumDrive::init() {
  * The core of the mecanum drive.
  */
 void MecanumDrive::drive(double forward, double strafe, double rotation, double e1, double e2, double e3, double e4) {
-  double v1 = forward + strafe + rotation; 
-  double v2 = forward - strafe - rotation;
-  double v3 = forward - strafe + rotation;
-  double v4 = forward + strafe - rotation;
+
+  // Mecanum FK
+  // v's are angular velocity targets rad/s
+  double v1 = (forward - strafe + rotation * DRIVETRAIN_WHEELBASE) / WHEEL_RADIUS; 
+  double v2 = (forward + strafe - rotation * DRIVETRAIN_WHEELBASE) / WHEEL_RADIUS;
+  double v3 = (forward + strafe + rotation * DRIVETRAIN_WHEELBASE) / WHEEL_RADIUS;
+  double v4 = (forward - strafe - rotation * DRIVETRAIN_WHEELBASE) / WHEEL_RADIUS;
 
   flPID.setSetpoint(v1);
   frPID.setSetpoint(v2);
   blPID.setSetpoint(v3);
   brPID.setSetpoint(v4);
-  
-  //encoder counts to linear m/s: enc / 882counts/rev * 0.024m/s
-  double flInput = countsToRevolutions(e1);
-  double frInput = countsToRevolutions(e2);
-  double blInput = countsToRevolutions(e3);
-  double brInput = countsToRevolutions(e4);
 
-  double flOut = flPID.compute(flInput);
-  double frOut = frPID.compute(frInput);
-  double blOut = blPID.compute(blInput);
-  double brOut = brPID.compute(brInput);
+  double flOut = flPID.compute(e1);
+  double frOut = frPID.compute(e2);
+  double blOut = blPID.compute(e3);
+  double brOut = brPID.compute(e4);
 
   normalize(flOut, frOut, blOut, brOut);
   
-  // Serial.print("Real_Speed:");
-  // Serial.print(String(flInput));
-  // Serial.print(" ");
-  // Serial.print("Output_PWM_Signal:");
-  // Serial.print(String(flOut));
-  // Serial.print(" ");
-  // Serial.print("Goal_Speed:");
-  // Serial.print(String(v1));
-  // Serial.print(" ");
-  // Serial.print("Error_Sum:");
-  // Serial.println(String(fltotalErr));
-  flPID.debugPrint();
+  // flPID.debugPrint();
 
   _flMotor.set(flOut);
   _frMotor.set(frOut);
