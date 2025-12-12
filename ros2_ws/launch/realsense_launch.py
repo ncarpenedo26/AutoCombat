@@ -1,3 +1,9 @@
+ros2 launch realsense2_camera rs_launch.py enable_accel:=true enable_gyro:=true unite_imu_method:=1
+
+ros2 topic list
+ros2 topic echo /camera/imu
+
+
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.actions import DeclareLaunchArgument

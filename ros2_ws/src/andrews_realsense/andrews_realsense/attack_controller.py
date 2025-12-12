@@ -43,7 +43,7 @@ class AttackController(Node):
         
         # 1. Check if we have EVER seen a ball
         if self.last_msg is None:
-            self.pub_vel.publish(twist)
+            self.pub_vel.publish(twist) # Stop if you never seen a ball at all
             return
 
         msg_time = Time.from_msg(self.last_msg.header.stamp)
