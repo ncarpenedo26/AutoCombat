@@ -9,20 +9,16 @@
  * @brief Controls a 4-wheel mecanum drivetrain using Motor objects.
  * * Assumes a standard 'X' configuration:
  * - M1: Front Left (FL)
- * - M2: Front Right (FR)/Users/nick/Desktop/AutoCombat/firmware/bridge/src/Mecanum.cpp
+ * - M2: Front Right (FR)
  * - M3: Back Left (BL)
- * - M4: Back Right (BR)
+ * - M4: Back Right (BR)c:\Users\ryker\Documents\UC Berkeley Work\Senior Year\AutoCombat\firmware\bridge\src\Mecanum.cpp c:\Users\ryker\Documents\UC Berkeley Work\Senior Year\AutoCombat\firmware\bridge\src\Motor.cpp
  */
 class MecanumDrive {
 public:
   /**
    * @brief Constructor for the MecanumDrive class.
-   * @param flPin The Arduino pin for the Front Left motor.
-   * @param frPin The Arduino pin for the Front Right motor.
-   * @param blPin The Arduino pin for the Back Left motor.
-   * @param brPin The Arduino pin for the Back Right motor.
    */
-  MecanumDrive(byte flPin, byte frPin, byte blPin, byte brPin);
+  MecanumDrive(Motor &flMotor, Motor &frMotor, Motor &blMotor, Motor &brMotor);
 
   /**
    * @brief Initializes all four underlying Motor objects.
@@ -32,17 +28,17 @@ public:
 
   /**
    * @brief Sets the desired velocity and direction for the drivetrain.
-   * * @param forward The forward/backward speed (-1.0 to 1.0).
+   * @param forward The forward/backward speed (-1.0 to 1.0).
    * @param strafe The left/right strafing speed (-1.0 to 1.0).
    * @param rotation The turning speed (clockwise/counter-clockwise) (-1.0 to 1.0).
    */
-  void drive(double forward, double strafe, double rotation);
+  void drive(double forward, double strafe, double rotation, double e1, double e2, double e3, double e4);
 
 private:
-  Motor _flMotor; // Front Left
-  Motor _frMotor; // Front Right
-  Motor _blMotor; // Back Left
-  Motor _brMotor; // Back Right
+  Motor& _flMotor; // Front Left
+  Motor& _frMotor; // Front Right
+  Motor& _blMotor; // Back Left
+  Motor& _brMotor; // Back Right
   
   /**
    * @brief Normalizes the motor speeds to ensure no motor exceeds the [-1.0, 1.0] range.

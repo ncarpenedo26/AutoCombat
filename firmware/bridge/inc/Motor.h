@@ -1,24 +1,34 @@
+// --- Motor.h ---
 #ifndef MOTOR_H
 #define MOTOR_H
 
-#include <Servo.h>
 #include <Arduino.h>
-
-#define ESC_PIN 9
-
-#define NEUTRAL_PULSE 1500
-#define MIN_PULSE 1000
-#define MAX_PULSE 2000
 
 class Motor {
 public:
-  Motor(byte pin);
+  /**
+   * @brief Constructor for the motor.
+   * @param pin1 The first input pin (Digital/Direction).
+   * @param pin2 The second input pin (PWM/Speed).
+   * @param channel The ESP32 LEDC channel to use (0-15).
+   */
+  Motor(byte pin1, byte pin2);
+  
   void init();
-  void set(double velocity); // -1.0 to 1.0
+  
+  /**
+   * @brief Sets the motor speed and direction.
+   * @param velocity A value from -1.0 (full reverse) to 1.0 (full forward).
+   */
+  void set(double velocity);
 
 private:
-  Servo _esc;
-  byte _pin;
+  const int _freq = 5000;      // 5 kHz PWM Frequency
+  const int _resolution = 8;   // 8-bit resolution (0-255 duty cycle)
+  const int _dutyCycleMax = pow(2,_resolution) - 1;
+
+  byte _pin1;
+  byte _pin2;
 };
 
 #endif

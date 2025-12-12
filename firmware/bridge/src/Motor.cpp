@@ -1,18 +1,29 @@
 #include "../inc/Motor.h"
 
-Motor::Motor(byte pin)
-  : _pin(pin) {}
+#include <Arduino.h>
+
+Motor::Motor(byte pin1, byte pin2)
+  : _pin1(pin1), _pin2(pin2) {}
 
 void Motor::init() {
-  _esc.attach(ESC_PIN);
-  // Set neutral position to arm the ESC
-  _esc.writeMicroseconds(NEUTRAL_PULSE); 
-  delay(200); // Wait for arming sequence to complete
+  // Initialize PWM pins
+  ledcAttach(_pin1, _freq, _resolution);
+  ledcAttach(_pin2, _freq, _resolution);
+
+  // Set seped 0
+  ledcWrite(_pin1, 0);
+  ledcWrite(_pin2, 0);
 }
 
 void Motor::set(double velocity) {
-  // Map -1.0 -> MIN_PULSE, 1.0 -> MAX_PULSE/Users/nick/Desktop/AutoCombat/firmware/bridge/inc/M
-  int pulse = velocity * (MAX_PULSE - MIN_PULSE) + MIN_PULSE;
-  int constrained = constrain(pulse, MIN_PULSE, MAX_PULSE);
-  _esc.writeMicroseconds(constrained);
+  // Map -1.0 -> MIN_PULSE, 1.0 -> MAX_PULSE
+  int duty = abs(velocity) * _dutyCycleMax;
+  int clamped = min(max(duty, 0), _dutyCycleMax);
+  if (velocity < 0) {
+    ledcWrite(_pin1, clamped);
+    ledcWrite(_pin2, 0);
+  } else {
+    ledcWrite(_pin1, 0);
+    ledcWrite(_pin2, clamped);
+  }
 }
