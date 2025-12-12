@@ -8,17 +8,17 @@ class OrbitController(Node):
         super().__init__('orbit_controller')
 
         # === Parameters ===
-        self.declare_parameter('target_distance', 0.5)
-        self.declare_parameter('k_dist', 1.0)
-        self.declare_parameter('k_yaw', 1.5)
-        self.declare_parameter('max_linear', 1.0)
-        self.declare_parameter('max_angular', 3.0)
-        self.declare_parameter('orbit_speed', 1.0)
+        self.declare_parameter('target_distance', 0.3)
+        self.declare_parameter('k_dist', .8)
+        self.declare_parameter('k_yaw', 8)
+        self.declare_parameter('max_linear', .3)
+        self.declare_parameter('max_angular', 6.0)
+        self.declare_parameter('orbit_speed', .5)
         self.declare_parameter('orbit_band', 0.15)
         self.declare_parameter('attack_threshold', 0.1)
 
         # Search Params
-        self.declare_parameter('search_spin_speed', 1.0)
+        self.declare_parameter('search_spin_speed', 2.0)
         self.declare_parameter('search_duration', 2.0)
 
         self.target_distance = float(self.get_parameter('target_distance').value)

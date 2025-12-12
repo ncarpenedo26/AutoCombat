@@ -8,8 +8,8 @@ class AttackController(Node):
         super().__init__('attack_controller')
 
         # === Tuning Parameters ===
-        self.declare_parameter('max_speed', 0.8)       # Max forward speed (m/s)
-        self.declare_parameter('max_turn', 2.5)        # Max turn speed (rad/s)
+        self.declare_parameter('max_speed', 0.5)       # Max forward speed (m/s)
+        self.declare_parameter('max_turn', 0.5)        # Max turn speed (rad/s)
         self.declare_parameter('k_turn', 2.5)          # Steering Aggression
         self.declare_parameter('lead_time', 0.3)       # Lead prediction (seconds)
         self.declare_parameter('ram_distance', 0.40)   # Ram threshold (meters)
@@ -127,6 +127,7 @@ class AttackController(Node):
 
 def main(args=None):
     rclpy.init(args=args)
+  
     node = AttackController()
     try: rclpy.spin(node)
     except KeyboardInterrupt: pass

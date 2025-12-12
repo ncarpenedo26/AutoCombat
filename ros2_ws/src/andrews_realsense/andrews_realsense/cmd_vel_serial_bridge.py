@@ -58,7 +58,7 @@ class CmdVelSerialBridge(Node):
         cmd = self.last_cmd
 
         # Format: x,y,omega\n
-        line = f"T{cmd.linear.x:.3f},{cmd.linear.y:.3f},{cmd.angular.z:.3f}\n"
+        line = f"T{cmd.linear.x:.2f},{cmd.linear.y:.2f},{cmd.angular.z:.2f}\r\n"
 
         try:
             self.ser.write(line.encode("ascii"))
