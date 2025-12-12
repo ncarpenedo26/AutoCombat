@@ -44,7 +44,6 @@ double PID::compute(double input) {
   } else if (_accumulatedError < -_maxAccumulatedError) {
     _accumulatedError = -_maxAccumulatedError;
   }
-
   // Output 0 if reverse is disallowed
   if (signs(_setpoint) != signs(output)) {
     output = 0;

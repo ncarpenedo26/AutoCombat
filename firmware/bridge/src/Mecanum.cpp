@@ -72,7 +72,7 @@ void MecanumDrive::drive(double forward, double strafe, double rotation, double 
 
   normalize(flOut, frOut, blOut, brOut);
   
-  // flPID.debugPrint();
+  blPID.debugPrint();
 
   _flMotor.set(flOut);
   _frMotor.set(frOut);
