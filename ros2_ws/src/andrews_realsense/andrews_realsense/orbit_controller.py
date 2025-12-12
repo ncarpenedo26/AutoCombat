@@ -42,7 +42,7 @@ class OrbitController(Node):
         self.ball_sub = self.create_subscription(PointStamped, '/ball_pose', self.ball_callback, 10)
         self.timer = self.create_timer(0.05, self.control_loop)
 
-        self.get_logger().info('OrbitController: READY (Steering Inverted).')
+        self.get_logger().info('OrbitController: READY')
 
     def ball_callback(self, msg: PointStamped):
         self.last_ball = msg

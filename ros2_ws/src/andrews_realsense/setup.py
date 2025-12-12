@@ -28,6 +28,7 @@ setup(
             'tennis_ball_detector = andrews_realsense.tennis_ball_detector:main',
 	        'orbit_controller = andrews_realsense.orbit_controller:main',
 	        'cmd_vel_serial_bridge = andrews_realsense.cmd_vel_serial_bridge:main',
+            'attack_controller= andrews_realsense.attack_controller:main',
         ],
     },
 )
